@@ -1,0 +1,6 @@
+{
+  "name": "SalineGuard AI",
+  "description": "Automated ICU IV fluid monitoring, real-time optical float-ball tracking, and ESP32 automatic pinch-clamp control system.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

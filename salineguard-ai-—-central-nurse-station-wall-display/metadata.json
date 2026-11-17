@@ -1,0 +1,8 @@
+{
+  "name": "SalineGuard AI — Central Nurse Station Wall Display",
+  "description": "Real-time clinical IV fluid telemetry dashboard and remote ESP32 servo clamp controller.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

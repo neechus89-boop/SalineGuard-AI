@@ -1,0 +1,214 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'neechus89@gmail.com';
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidBagVolume(ml) {
+      return ml is number && (ml == 250 || ml == 500 || ml == 1000);
+    }
+
+    function isValidPatient(data) {
+      return data.keys().hasAll([
+        'patientCode',
+        'fullName',
+        'age',
+        'wardBed',
+        'diagnosis',
+        'prescribedBagMl',
+        'prescribedRateMlHr',
+        'attendingClinician',
+        'ownerId',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'patientCode',
+        'fullName',
+        'age',
+        'wardBed',
+        'diagnosis',
+        'prescribedBagMl',
+        'prescribedRateMlHr',
+        'attendingClinician',
+        'ownerId',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.patientCode is string &&
+      data.patientCode.size() >= 2 &&
+      data.patientCode.size() <= 40 &&
+      data.patientCode.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.fullName is string &&
+      data.fullName.size() >= 2 &&
+      data.fullName.size() <= 100 &&
+      data.age is number &&
+      data.age >= 0 &&
+      data.age <= 130 &&
+      data.wardBed is string &&
+      data.wardBed.size() >= 2 &&
+      data.wardBed.size() <= 60 &&
+      data.diagnosis is string &&
+      data.diagnosis.size() >= 2 &&
+      data.diagnosis.size() <= 160 &&
+      isValidBagVolume(data.prescribedBagMl) &&
+      data.prescribedRateMlHr is number &&
+      data.prescribedRateMlHr >= 10 &&
+      data.prescribedRateMlHr <= 1000 &&
+      data.attendingClinician is string &&
+      data.attendingClinician.size() >= 2 &&
+      data.attendingClinician.size() <= 80 &&
+      isValidId(data.ownerId) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidInfusionSession(data) {
+      return data.keys().hasAll([
+        'patientId',
+        'patientCode',
+        'wardBed',
+        'bottleCapacityMl',
+        'flowRateMlPerHr',
+        'startLevelPercent',
+        'endLevelPercent',
+        'volumeUsedMl',
+        'bottlesConsumed',
+        'durationSeconds',
+        'estimatedTimeMinutes',
+        'clampTriggered',
+        'status',
+        'ownerId',
+        'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'patientId',
+        'patientCode',
+        'wardBed',
+        'bottleCapacityMl',
+        'flowRateMlPerHr',
+        'startLevelPercent',
+        'endLevelPercent',
+        'volumeUsedMl',
+        'bottlesConsumed',
+        'durationSeconds',
+        'estimatedTimeMinutes',
+        'clampTriggered',
+        'status',
+        'notes',
+        'ownerId',
+        'createdAt'
+      ]) &&
+      isValidId(data.patientId) &&
+      data.patientCode is string &&
+      data.patientCode.size() >= 2 &&
+      data.patientCode.size() <= 40 &&
+      data.patientCode.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.wardBed is string &&
+      data.wardBed.size() >= 2 &&
+      data.wardBed.size() <= 60 &&
+      isValidBagVolume(data.bottleCapacityMl) &&
+      data.flowRateMlPerHr is number &&
+      data.flowRateMlPerHr >= 10 &&
+      data.flowRateMlPerHr <= 1000 &&
+      data.startLevelPercent is number &&
+      data.startLevelPercent >= 0 &&
+      data.startLevelPercent <= 100 &&
+      data.endLevelPercent is number &&
+      data.endLevelPercent >= 0 &&
+      data.endLevelPercent <= 100 &&
+      data.volumeUsedMl is number &&
+      data.volumeUsedMl >= 0 &&
+      data.volumeUsedMl <= 2000 &&
+      data.bottlesConsumed is number &&
+      data.bottlesConsumed >= 0 &&
+      data.bottlesConsumed <= 10 &&
+      data.durationSeconds is number &&
+      data.durationSeconds >= 0 &&
+      data.durationSeconds <= 604800 &&
+      data.estimatedTimeMinutes is number &&
+      data.estimatedTimeMinutes >= 0 &&
+      data.estimatedTimeMinutes <= 10080 &&
+      data.clampTriggered is bool &&
+      data.status is string &&
+      data.status.size() >= 5 &&
+      data.status.size() <= 20 &&
+      (data.status == 'COMPLETED' || data.status == 'CLAMPED_AUTO' || data.status == 'MANUAL_STOP') &&
+      (!('notes' in data) || (data.notes is string && data.notes.size() <= 240)) &&
+      isValidId(data.ownerId) &&
+      data.ownerId == request.auth.uid &&
+      data.createdAt is timestamp;
+    }
+
+    // Hospital Patient Profiles
+    match /patients/{patientId} {
+      allow get: if isVerifiedUser() && isValidId(patientId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isVerifiedUser() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(patientId) &&
+        isValidPatient(incoming()) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(patientId) &&
+        isValidPatient(incoming()) &&
+        (existing().ownerId == request.auth.uid || isAdmin()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'fullName',
+          'age',
+          'wardBed',
+          'diagnosis',
+          'prescribedBagMl',
+          'prescribedRateMlHr',
+          'attendingClinician',
+          'updatedAt'
+        ]);
+      allow delete: if isVerifiedUser() && isValidId(patientId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    // Saline Bottle Consumption & Time-Taken Telemetry Records
+    match /infusionSessions/{sessionId} {
+      allow get: if isVerifiedUser() && isValidId(sessionId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isVerifiedUser() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(sessionId) &&
+        isValidInfusionSession(incoming()) &&
+        incoming().createdAt == request.time &&
+        exists(/databases/$(database)/documents/patients/$(incoming().patientId)) &&
+        get(/databases/$(database)/documents/patients/$(incoming().patientId)).data.ownerId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isVerifiedUser() && isValidId(sessionId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+  }
+}

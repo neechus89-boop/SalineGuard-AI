@@ -1,0 +1,202 @@
+{
+  "entities": {
+    "Patient": {
+      "title": "Hospital Patient",
+      "description": "Hospital ICU patient profile linked to saline IV bag monitoring and supply analytics.",
+      "type": "object",
+      "properties": {
+        "patientCode": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Hospital MRN or ward patient identifier code."
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100,
+          "description": "Patient full name."
+        },
+        "age": {
+          "type": "number",
+          "description": "Patient age in years."
+        },
+        "wardBed": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60,
+          "description": "Hospital ward and bed location (e.g., ICU-A Bed 04)."
+        },
+        "diagnosis": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160,
+          "description": "Primary clinical diagnosis or IV therapy indication."
+        },
+        "prescribedBagMl": {
+          "type": "number",
+          "enum": [250, 500, 1000],
+          "description": "Prescribed saline bottle capacity in milliliters."
+        },
+        "prescribedRateMlHr": {
+          "type": "number",
+          "description": "Prescribed IV infusion rate in mL/hr."
+        },
+        "attendingClinician": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "description": "Attending physician or ICU nurse name."
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Authenticated clinician Firebase UID."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when patient record was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when patient record was last updated."
+        }
+      },
+      "required": [
+        "patientCode",
+        "fullName",
+        "age",
+        "wardBed",
+        "diagnosis",
+        "prescribedBagMl",
+        "prescribedRateMlHr",
+        "attendingClinician",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "InfusionSession": {
+      "title": "Saline Bottle Infusion Session",
+      "description": "Telemetry record capturing how much saline volume/bottles were used and time taken for hospital and investment analytics.",
+      "type": "object",
+      "properties": {
+        "patientId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Reference ID of the hospital patient document."
+        },
+        "patientCode": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Hospital patient MRN code snapshot."
+        },
+        "wardBed": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60,
+          "description": "Ward and bed snapshot at time of infusion."
+        },
+        "bottleCapacityMl": {
+          "type": "number",
+          "enum": [250, 500, 1000],
+          "description": "Saline bottle size in mL."
+        },
+        "flowRateMlPerHr": {
+          "type": "number",
+          "description": "Configured flow rate in mL/hr."
+        },
+        "startLevelPercent": {
+          "type": "number",
+          "description": "Starting saline level percentage (0-100)."
+        },
+        "endLevelPercent": {
+          "type": "number",
+          "description": "Ending saline level percentage (0-100)."
+        },
+        "volumeUsedMl": {
+          "type": "number",
+          "description": "Actual saline fluid consumed in milliliters."
+        },
+        "bottlesConsumed": {
+          "type": "number",
+          "description": "Equivalent saline bottle count consumed (volumeUsedMl / bottleCapacityMl)."
+        },
+        "durationSeconds": {
+          "type": "number",
+          "description": "Actual time taken for the infusion session in seconds."
+        },
+        "estimatedTimeMinutes": {
+          "type": "number",
+          "description": "Projected total time to reach 10% clamp threshold in minutes."
+        },
+        "clampTriggered": {
+          "type": "boolean",
+          "description": "Whether the SG90 pinch-clamp automatically engaged at <=10%."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["COMPLETED", "CLAMPED_AUTO", "MANUAL_STOP"],
+          "description": "Final outcome state of the saline bottle session."
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 240,
+          "description": "Optional clinical or supply observation note."
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Authenticated clinician Firebase UID."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when infusion session was logged."
+        }
+      },
+      "required": [
+        "patientId",
+        "patientCode",
+        "wardBed",
+        "bottleCapacityMl",
+        "flowRateMlPerHr",
+        "startLevelPercent",
+        "endLevelPercent",
+        "volumeUsedMl",
+        "bottlesConsumed",
+        "durationSeconds",
+        "estimatedTimeMinutes",
+        "clampTriggered",
+        "status",
+        "ownerId",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/patients/{patientId}": {
+      "schema": {
+        "$ref": "#/entities/Patient"
+      },
+      "description": "Hospital ICU patient profiles owned by verified authenticated clinicians."
+    },
+    "/infusionSessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/InfusionSession"
+      },
+      "description": "Logged saline bottle volume consumption and infusion time-taken records linked to hospital patients."
+    }
+  }
+}
