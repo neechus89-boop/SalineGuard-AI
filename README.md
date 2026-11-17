@@ -28,7 +28,7 @@
 
 ---
 
-## 🔌 Hardware Pinout Summary
+##  Hardware Pinout Summary
 
 ### Bedside Unit (ESP32 DevKit V1)
 * **SH1106 OLED (I2C):** `SDA → GPIO 21`, `SCL → GPIO 22`
