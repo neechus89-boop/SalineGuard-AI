@@ -48,3 +48,9 @@
 1. Flash `firmware/Bedside_Unit_ESP32.ino` to the Bedside ESP32 and `firmware/Nurse_Station_ESP32.ino` to the Nurse Station ESP32 using Arduino IDE.
 2. Connect the smartphone and laptop to the **`SalineGuard-AI`** Wi-Fi network (Password: `12345678`).
 3. Open the web dashboard on the laptop and point the phone tracker at the IV drip chamber.
+
+---
+
+##  Project Creators
+* **Ayansh Vineeth**
+* **Anugrah Dev S**
